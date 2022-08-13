@@ -377,8 +377,6 @@ describe('Exchange', () => {
 
 				await expect(exchange.connect(user2).fillOrder(1)).to.be.reverted
 			})
-
 		})
-
 	})
 })

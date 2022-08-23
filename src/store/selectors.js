@@ -56,6 +56,82 @@ const decorateOrder = (order, tokens) => {
 }
 
 // ------------------------------------------------------------------------------
+// ALL FILLED ORDERS
+
+export const filledOrdersSelector = createSelector(
+  filledOrders,
+  tokens,
+  (orders, tokens) => {
+    if (!tokens[0] || !tokens[1]) { return }
+
+    // Filter orders by selected tokens
+    orders = orders.filter((o) => o.tokenGet === tokens[0].address || o.tokenGet === tokens[1].address)
+    orders = orders.filter((o) => o.tokenGive === tokens[0].address || o.tokenGive === tokens[1].address)
+
+    // Part 1: Sort ordering by date ascending
+    // Part 2: Apply red/green order colors - meaning 'decorate' orders
+    // Part 3: Sort orders by time descending
+
+    // Part 1 - Ascending timestamp for price comparison
+    orders = orders.sort((a, b) => a.timestamp - b.timestamp)
+
+    // Part 2 - Decorate the orders
+    orders = decorateFilledOrders(orders, tokens)
+
+    // Part 3 - Descending timestamp for price comparison
+    orders = orders.sort((a, b) => b.timestamp - a.timestamp)
+
+    return orders  
+
+  }
+)
+
+const decorateFilledOrders = (orders, tokens) => {
+  // Track previous order to compare history
+  let previousOrder = orders[0]
+
+
+  return(
+
+    orders.map((order) => {
+      // Part 2 - Decorate each of the orders
+      order = decorateOrder(order, tokens)
+      order = decorateFilledOrder(order, previousOrder)
+      previousOrder = order // Update previous order once it has been decorated
+      return order
+    })
+  )
+}
+
+  // Singular for each individual order
+const decorateFilledOrder = (order, previousOrder) => {
+  return({
+    ...order,
+    tokenPriceClass: tokenPriceClass(order.tokenPrice, order.id, previousOrder)
+  })
+}
+
+
+
+const tokenPriceClass = (tokenPrice, orderId, previousOrder) => {
+
+    // Show green price if only one order exists
+    if (previousOrder.id === orderId) {
+      return GREEN
+    }
+
+    // Show green price if order price is MORE than previous order
+    // Show red price if order price is LESS than previous order
+  
+    if (previousOrder.tokenPrice <+ tokenPrice) {
+      return GREEN // Increase
+    } else {
+      return RED   // Decrease
+    }
+
+  }
+
+// ------------------------------------------------------------------------------
 // ORDER BOOK
 
 export const orderBookSelector = createSelector(

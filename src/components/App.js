@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux'
+import { useDispatch } from 'react-redux';
 import config from '../config.json';
 
-import { 
-  loadProvider, 
-  loadNetwork, 
+import {
+  loadProvider,
+  loadNetwork,
   loadAccount,
   loadTokens,
   loadExchange,
@@ -21,38 +21,40 @@ import Transactions from './Transactions'
 import Trades from './Trades'
 import OrderBook from './OrderBook'
 
-
 function App() {
-
   const dispatch = useDispatch()
 
   const loadBlockchainData = async () => {
-    
-
     // Connect Ethers to blockchain
     const provider = loadProvider(dispatch)
 
     // Fetch current network's chainId (e.g. hardhat: 31337, kovan: 42)
     const chainId = await loadNetwork(provider, dispatch)
 
-    // Fetch current account & balance from Metamask
-    await loadAccount(provider, dispatch)
+    // Reload page when network changes
+    window.ethereum.on('chainChanged', () => {
+      window.location.reload()
+    })
 
-    // Load Token Smart Contract
+    // Fetch current account & balance from Metamask when changed
+    window.ethereum.on('accountsChanged', () => {
+      loadAccount(provider, dispatch)
+    })
+
+    // Load token smart contracts
     const DApp = config[chainId].DApp
     const mETH = config[chainId].mETH
     await loadTokens(provider, [DApp.address, mETH.address], dispatch)
 
-    // Load Exchange Smart Contract
+    // Load exchange smart contract
     const exchangeConfig = config[chainId].exchange
     const exchange = await loadExchange(provider, exchangeConfig.address, dispatch)
-    
+
     // Fetch all orders: open, filled, cancelled
     loadAllOrders(provider, exchange, dispatch)
 
     // Listen to events
     subscribeToEvents(exchange, dispatch)
-
   }
 
   useEffect(() => {
@@ -67,24 +69,22 @@ function App() {
       <main className='exchange grid'>
         <section className='exchange__section--left grid'>
 
-           <Markets />
+          <Markets />
 
-           <Balance />
+          <Balance />
 
-           <Order />
-
-          {/* Order */}
+          <Order />
 
         </section>
         <section className='exchange__section--right grid'>
 
-           <PriceChart />
+          <PriceChart />
 
-           <Transactions />
+          <Transactions />
 
           <Trades />
 
-         <OrderBook />
+          <OrderBook />
 
         </section>
       </main>

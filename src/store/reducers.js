@@ -242,7 +242,7 @@ case 'ORDER_FILL_REQUEST':
     case 'TRANSFER_REQUEST':
       return {
         ...state,
-        trasnsaction: {
+        transaction: {
           transactionType: 'Transfer',
           isPending: true,
           isSuccessful: false
